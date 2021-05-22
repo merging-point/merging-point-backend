@@ -1,4 +1,5 @@
-import math
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -16,8 +17,36 @@ class Point:
 
 
 class ParkinglotViewSet(viewsets.ViewSet):
+    closest_param = [
+        openapi.Parameter(
+            'north_east_latitude',
+            openapi.IN_QUERY,
+            description="north_east_latitude",
+            type=openapi.TYPE_NUMBER,
+        ),
+        openapi.Parameter(
+            'north_east_longtitude',
+            openapi.IN_QUERY,
+            description="north east longtitude",
+            type=openapi.TYPE_NUMBER,
+        ),
+        openapi.Parameter(
+            'south_west_latitude',
+            openapi.IN_QUERY,
+            description="south west latitude",
+            type=openapi.TYPE_NUMBER,
+        ),
+        openapi.Parameter(
+            'south_west_longtitude',
+            openapi.IN_QUERY,
+            description="south west longtitude",
+            type=openapi.TYPE_NUMBER,
+        ),
+    ]
+
     @action(detail=False, methods=['get'])
-    def get_closest(self, request):
+    @swagger_auto_schema(manual_parameters=closest_param)
+    def closest(self, request):
         # south west lat lng, north east lat lng
         south_west_point = Point(
             request.GET.get('south_west_latitude'),
