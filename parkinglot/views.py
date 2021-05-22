@@ -1,7 +1,7 @@
 import json
 import math
 import requests
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from drf_yasg import openapi
@@ -64,6 +64,21 @@ class ParkinglotViewSet(viewsets.ViewSet):
                          responses={200: ParkinglotSerializer})
     def closest(self, request):
         # south west lat lng, north east lat lng
+        required_parameters = [
+            'center_latitude', 'center_longtitude', 'south_west_latitude',
+            'south_west_longtitude', 'north_east_latitude',
+            'north_east_longtitude'
+        ]
+        for required_parameter in required_parameters:
+            if required_parameter not in request.GET:
+                return Response(
+                    data={
+                        'error':
+                        'following fields are missing: ' +
+                        ', '.join(required_parameters)
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         center_point = Point(
             request.GET.get('center_latitude'),
             request.GET.get('center_longtitude'),
