@@ -160,3 +160,5 @@ SWAGGER_SETTINGS = {
     },
     'USE_SESSION_AUTH': False,
 }
+
+AUTH_USER_MODEL = "user.user"
