@@ -45,7 +45,8 @@ class ParkinglotViewSet(viewsets.ViewSet):
     ]
 
     @action(detail=False, methods=['get'])
-    @swagger_auto_schema(manual_parameters=closest_param)
+    @swagger_auto_schema(manual_parameters=closest_param,
+                         responses={200: ParkinglotSerializer})
     def closest(self, request):
         # south west lat lng, north east lat lng
         south_west_point = Point(
@@ -57,12 +58,32 @@ class ParkinglotViewSet(viewsets.ViewSet):
             request.GET.get('north_east_longtitude'),
         )
 
+        temp = Parkinglot.objects.filter(
+            parking_compartments_cnt__gte=50).only('parking_compartments_cnt')
+
+        total = 0
+        for t in temp:
+            total += t.parking_compartments_cnt * 0.04
+
+        avg = total / len(temp)
+
         found_parking_lots = Parkinglot.objects.filter(
             latitude__lte=north_east_point.latitude,
             latitude__gte=south_west_point.latitude,
             longtitude__lte=north_east_point.longtitude,
             longtitude__gte=south_west_point.longtitude,
         )
+
         serializer = ParkinglotSerializer(many=True, data=found_parking_lots)
         serializer.is_valid()
-        return Response(serializer.data)
+
+        response_data = []
+
+        for data in serializer.data:
+            spots_for_disabled_cnt = data['parking_compartments_cnt'] * 0.04
+            data['avg_bigger_percentage'] = round(
+                (spots_for_disabled_cnt - avg) / avg *
+                100)  # rounded percentage
+            response_data.append(data)
+
+        return Response(data)
