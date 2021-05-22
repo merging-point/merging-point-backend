@@ -86,4 +86,4 @@ class ParkinglotViewSet(viewsets.ViewSet):
                 100)  # rounded percentage
             response_data.append(data)
 
-        return Response(data)
+        return Response(response_data)
