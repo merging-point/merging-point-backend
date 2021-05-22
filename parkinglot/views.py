@@ -119,7 +119,7 @@ class ParkinglotViewSet(viewsets.ViewSet):
         closest_top10 = response_data[:10]
 
         for i in range(len(closest_top10)):
-            closest_top10[i]['duration'] = get_arrival_duration(
+            closest_top10[i]['estimated_time'] = get_arrival_duration(
                 f"{closest_top10[i]['longtitude']},{closest_top10[i]['latitude']}",
                 f"{center_point.longtitude},{center_point.latitude}",
             )
