@@ -1,3 +1,4 @@
+import math
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
@@ -18,6 +19,18 @@ class Point:
 
 class ParkinglotViewSet(viewsets.ViewSet):
     closest_param = [
+        openapi.Parameter(
+            'center_latitude',
+            openapi.IN_QUERY,
+            description="center latitude",
+            type=openapi.TYPE_NUMBER,
+        ),
+        openapi.Parameter(
+            'center_longtitude',
+            openapi.IN_QUERY,
+            description="center longtitude",
+            type=openapi.TYPE_NUMBER,
+        ),
         openapi.Parameter(
             'north_east_latitude',
             openapi.IN_QUERY,
@@ -49,6 +62,10 @@ class ParkinglotViewSet(viewsets.ViewSet):
                          responses={200: ParkinglotSerializer})
     def closest(self, request):
         # south west lat lng, north east lat lng
+        center_point = Point(
+            request.GET.get('center_latitude'),
+            request.GET.get('center_longtitude'),
+        )
         south_west_point = Point(
             request.GET.get('south_west_latitude'),
             request.GET.get('south_west_longtitude'),
@@ -85,5 +102,16 @@ class ParkinglotViewSet(viewsets.ViewSet):
                 (spots_for_disabled_cnt - avg) / avg *
                 100)  # rounded percentage
             response_data.append(data)
+
+        def calc_diagonal_distance(target_latitude, target_longtitude,
+                                   center_latitude, center_longtitude):
+            width = abs(float(target_latitude) - float(center_latitude))
+            height = abs(float(target_longtitude) - float(center_longtitude))
+
+            return (math.sqrt(width**2 + height**2))
+
+        response_data.sort(key=lambda x: (calc_diagonal_distance(
+            x['latitude'], x['longtitude'], center_point.latitude, center_point
+            .longtitude)))  # sort by short distance
 
         return Response(response_data)
