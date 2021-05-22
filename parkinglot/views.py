@@ -1,9 +1,11 @@
+import json
 import math
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
+import requests
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from .models import Parkinglot
 from .serializers import ParkinglotSerializer
 
@@ -112,6 +114,38 @@ class ParkinglotViewSet(viewsets.ViewSet):
 
         response_data.sort(key=lambda x: (calc_diagonal_distance(
             x['latitude'], x['longtitude'], center_point.latitude, center_point
-            .longtitude)))  # sort by short distance
+            .longtitude), ), )  # sort by short distance
 
-        return Response(response_data)
+        closest_top10 = response_data[:10]
+
+        for i in range(len(closest_top10)):
+            closest_top10[i]['duration'] = get_arrival_duration(
+                f"{closest_top10[i]['longtitude']},{closest_top10[i]['latitude']}",
+                f"{center_point.longtitude},{center_point.latitude}",
+            )
+
+        return Response(closest_top10 + response_data[10:])
+
+
+def get_arrival_duration(start, goal) -> int:
+    headers = {
+        'X-NCP-APIGW-API-KEY-ID': 'jygh7x1jrq',
+        'X-NCP-APIGW-API-KEY': 'cTOEcsLwF32zsLPa7imyo44sGwFACyImh6i3Z32a'
+    }
+    response = requests.get(
+        f"https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start={start}&goal={goal}&option=traoptimal",
+        headers=headers,
+    ).text
+    response_json = json.loads(response)
+    status_code = response_json['code']
+
+    if status_code != 0:
+        return -1
+
+    traoptimals = response_json['route']['traoptimal']
+    min_durations = traoptimals[0]['summary']['duration']
+    for traoptimal in traoptimals[1:]:
+        cursor = traoptimal['summary']['duration']
+        if min_durations > cursor:
+            min_durations = cursor
+    return min_durations
