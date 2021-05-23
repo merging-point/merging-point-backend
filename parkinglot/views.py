@@ -1,6 +1,7 @@
 import json
 import math
 import requests
+import threading
 from django.db.models import Count
 from rest_framework import status, viewsets, permissions
 from rest_framework.response import Response
@@ -184,34 +185,48 @@ class ParkinglotViewSet(viewsets.ViewSet):
 
         # add estimated time for the top 10 parking lots
         closest_top10 = response_data[:10]
-        # for i in range(len(closest_top10)):
-        #     closest_top10[i]['estimated_time'] = get_arrival_duration(
-        #         f"{closest_top10[i]['longtitude']},{closest_top10[i]['latitude']}",
-        #         f"{center_point.longtitude},{center_point.latitude}",
-        #     )
+
+        def get_arrival_duration(start, goal) -> int:
+            headers = {
+                'X-NCP-APIGW-API-KEY-ID': 'jygh7x1jrq',
+                'X-NCP-APIGW-API-KEY':
+                'cTOEcsLwF32zsLPa7imyo44sGwFACyImh6i3Z32a'
+            }
+            response = requests.get(
+                f"https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start={start}&goal={goal}&option=traoptimal",
+                headers=headers,
+            ).text
+            response_json = json.loads(response)
+            status_code = response_json['code']
+
+            if status_code != 0:
+                return -1
+
+            traoptimals = response_json['route']['traoptimal']
+            min_durations = traoptimals[0]['summary']['duration']
+            for traoptimal in traoptimals[1:]:
+                cursor = traoptimal['summary']['duration']
+                if min_durations > cursor:
+                    min_durations = cursor
+            return min_durations
+
+        # get arrival time using thread
+        def arrival_duration_thread(id: int):
+            closest_top10[i]['estimated_time'] = get_arrival_duration(
+                f"{closest_top10[i]['longtitude']},{closest_top10[i]['latitude']}",
+                f"{center_point.longtitude},{center_point.latitude}",
+            )
+
+        threads = [None] * 10
+        for i in range(len(closest_top10)):
+            threads[i] = threading.Thread(
+                target=arrival_duration_thread,
+                args=(i, ),
+            )
+
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
 
         return Response(closest_top10 + response_data[10:])
-
-
-def get_arrival_duration(start, goal) -> int:
-    headers = {
-        'X-NCP-APIGW-API-KEY-ID': 'jygh7x1jrq',
-        'X-NCP-APIGW-API-KEY': 'cTOEcsLwF32zsLPa7imyo44sGwFACyImh6i3Z32a'
-    }
-    response = requests.get(
-        f"https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start={start}&goal={goal}&option=traoptimal",
-        headers=headers,
-    ).text
-    response_json = json.loads(response)
-    status_code = response_json['code']
-
-    if status_code != 0:
-        return -1
-
-    traoptimals = response_json['route']['traoptimal']
-    min_durations = traoptimals[0]['summary']['duration']
-    for traoptimal in traoptimals[1:]:
-        cursor = traoptimal['summary']['duration']
-        if min_durations > cursor:
-            min_durations = cursor
-    return min_durations
