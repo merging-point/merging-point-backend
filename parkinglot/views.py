@@ -212,8 +212,8 @@ class ParkinglotViewSet(viewsets.ViewSet):
 
         # get arrival time using thread
         def arrival_duration_thread(id: int):
-            closest_top10[i]['estimated_time'] = get_arrival_duration(
-                f"{closest_top10[i]['longtitude']},{closest_top10[i]['latitude']}",
+            closest_top10[id]['estimated_time'] = get_arrival_duration(
+                f"{closest_top10[id]['longtitude']},{closest_top10[id]['latitude']}",
                 f"{center_point.longtitude},{center_point.latitude}",
             )
 
