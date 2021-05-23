@@ -217,7 +217,7 @@ class ParkinglotViewSet(viewsets.ViewSet):
                 f"{center_point.longtitude},{center_point.latitude}",
             )
 
-        threads = [None] * 10
+        threads = [None] * len(closest_top10)
         for i in range(len(closest_top10)):
             threads[i] = threading.Thread(
                 target=arrival_duration_thread,
