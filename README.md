@@ -1,6 +1,6 @@
 # mergingpoint
 
-Django / DRF / Postgresql
+Django / DRF / PostgreSQL
 The backend server of the mergingpoint using the Django along with the DRF.
 
 ## Install Requirements
